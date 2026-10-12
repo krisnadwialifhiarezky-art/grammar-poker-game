@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grammar Poker — Module 1</title>
+<style>
+:root{--bg:#10231d;--panel:#18372d;--gold:#f2c66d;--cream:#fff8e9;--muted:#bdcec4;--green:#66d6a1;--red:#e66d67}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#245341 0,transparent 45%),var(--bg);color:var(--cream);font-family:Arial,sans-serif;min-height:100vh}
+.wrap{max-width:1000px;margin:auto;padding:16px}header{text-align:center;padding:22px 8px}header .emoji{font-size:42px}h1{margin:0;color:var(--gold);font-size:clamp(26px,5vw,38px)}h2{color:var(--gold);margin-top:0}p,.hint{color:var(--muted);line-height:1.5}.panel{background:var(--panel);border:1px solid #ffffff20;border-radius:16px;padding:18px;margin-bottom:15px;box-shadow:0 10px 24px #0002}
+button,input{font:inherit}button{border:0;border-radius:10px;padding:12px 15px;font-weight:bold;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.primary{background:var(--gold);color:#17271e}.secondary{background:#345b4a;color:white}.danger{background:#9d3939;color:white}input{width:100%;padding:12px;border-radius:9px;border:1px solid #ffffff25;background:#10271f;color:white;margin:6px 0 12px}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}.hidden{display:none!important}.status{padding:11px;border-radius:9px;background:#10271f;color:var(--muted);margin-bottom:12px;overflow-wrap:anywhere}.gold{color:var(--gold)}.code{text-align:center;font-size:30px;letter-spacing:5px;font-weight:bold;color:var(--gold);padding:10px}.players{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.player{background:#10271f;padding:12px;border:1px solid #ffffff20;border-radius:10px}.player.active{border:2px solid var(--gold)}.player small{display:block;color:var(--muted);margin-top:6px}.badge{display:inline-block;background:#345b4a;border-radius:5px;padding:4px 7px;font-size:11px;margin-top:6px}.board{background:#10271f;border:2px dashed #f2c66d80;border-radius:14px;padding:15px}.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:15px 0}.slot{min-height:80px;border:1px dashed #ffffff40;border-radius:10px;padding:8px 4px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;overflow-wrap:anywhere}.slot.filled{border:1px solid var(--gold);background:#f2c66d18}.slot label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}.slot strong{margin-top:8px;font-size:clamp(13px,3vw,18px)}.sentence{text-align:center;color:var(--gold);font-size:clamp(18px,4vw,26px);font-weight:bold;min-height:32px;overflow-wrap:anywhere}.hand{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px}.card{background:var(--cream);color:#173629;border:3px solid transparent;border-radius:11px;padding:12px 9px;min-height:105px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}.card.subject{border-color:#e2b55a}.card.tobe{border-color:#79b7ef}.card.complement{border-color:#71cba0}.card.selected{outline:3px solid white;transform:translateY(-3px)}.card .type{font-size:10px;text-transform:uppercase;font-weight:bold;color:#60766a}.card .word{font-size:18px;font-weight:900;overflow-wrap:anywhere}.card .num{font-size:10px;text-align:right;color:#60766a}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:130px}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:10px 6px;border-bottom:1px solid #ffffff20}.table th{color:var(--gold)}.log{max-height:210px;overflow:auto}.log div{padding:8px 0;border-bottom:1px solid #ffffff18;color:var(--muted);font-size:13px}.foot{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+@media(max-width:520px){.wrap{padding:10px}.panel{padding:13px}.slots{gap:4px}.slot{min-height:70px}.hand{grid-template-columns:repeat(2,minmax(0,1fr))}.row{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="emoji">🃏</div><h1>GRAMMAR POKER</h1><p>MODULE 1 · Subject + To Be + Complement<br>Susun kalimat, kumpulkan poin, dan menangkan permainan!</p></header>
+<div id="status" class="status">Mode offline siap dimainkan di satu perangkat.</div>
+<section id="lobby" class="panel">
+<h2>🎮 Mulai Permainan</h2>
+<label for="name">Nama pemain</label><input id="name" maxlength="24" placeholder="Contoh: Aisyah">
+<div class="row"><button id="addPlayer" class="primary">Tambah Pemain</button><button id="start" class="secondary">Mulai Game</button></div>
+<p class="hint">Versi ini bisa langsung dibuka tanpa server. Mainkan bergantian di satu HP/laptop. Untuk bermain dari perangkat berbeda, game perlu diunggah ke hosting dan dihubungkan ke Firebase.</p>
+<h3>Daftar pemain (5–6 disarankan)</h3><div id="lobbyPlayers" class="players"></div>
+</section>
+<section id="game" class="hidden">
+<div class="panel"><div class="row" style="align-items:center"><div><h2>🎯 Permainan</h2><div id="turnText" class="hint"></div></div><button id="restart" class="danger">Mulai Ulang</button></div>
+<div class="board"><div class="hint" style="text-align:center">PAPAN PENYUSUN KALIMAT</div><div class="slots">
+<div id="sSubject" class="slot"><label>Subject</label><strong>?</strong></div>
+<div id="sTobe" class="slot"><label>To Be</label><strong>?</strong></div>
+<div id="sComplement" class="slot"><label>Complement</label><strong>?</strong></div></div>
+<div id="sentence" class="sentence">Belum ada kalimat</div><p id="boardHint" class="hint" style="text-align:center"></p></div></div>
+<div class="panel"><div class="row" style="align-items:center"><h2>🃏 Kartu di Tangan</h2><span id="handCount" class="badge">5 kartu</span></div><p id="instruction" class="hint"></p><div id="hand" class="hand"></div><div class="actions"><button id="play" class="primary" disabled>Mainkan Kartu</button><button id="skip" class="secondary">Skip Giliran</button></div></div>
+<div class="panel"><h2>🏆 Papan Skor</h2><table class="table"><thead><tr><th>Pemain</th><th>Kalimat</th><th>Poin</th></tr></thead><tbody id="scores"></tbody></table></div>
+<div class="panel"><h2>📜 Riwayat</h2><div id="logs" class="log"></div></div>
+<div id="finished" class="panel hidden"><h2>🏆 Game Selesai</h2><div id="winner"></div><button id="playAgain" class="primary">Main Lagi</button></div>
+</section>
+<div class="foot">Grammar Poker · Module 1 · Versi offline</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const subjects=["I","You","We","They","He","She","It","My mother","My father","The teacher","The students","My friends","Ali","Siti","The cat","The dogs","This book","Those flowers","Our classroom","The weather"];
+const tobes=["am","am","am","am","am","is","is","is","is","is","is","is","are","are","are","are","are","are","are","are"];
+const complements=["happy","sad","tired","hungry","thirsty","a student","a teacher","my best friend","very beautiful","very smart","kind and friendly","at school","at home","in the classroom","ready","clean","interesting","good","beautiful","in the garden"];
+let players=[],deck=[],used=[],turn=0,board={},starter=null,skips=0,selected=null,logs=[],playing=false;
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeDeck(){return shuffle([...subjects.map((word,i)=>({id:"S"+(i+1),type:"subject",word})),...tobes.map((word,i)=>({id:"T"+(i+1),type:"tobe",word})),...complements.map((word,i)=>({id:"C"+(i+1),type:"complement",word}))])}
+function log(s){logs.unshift(s);logs=logs.slice(0,35)}
+function drawMin(p){while(p.hand.length<3&&deck.length&&p.hand.length<5)p.hand.push(deck.pop())}
+function needed(){return !board.subject?"subject":!board.tobe?"tobe":!board.complement?"complement":null}
+function sentence(){return [board.subject?.word,board.tobe?.word,board.complement?.word].filter(Boolean).join(" ")}
+function correctToBe(s,t){s=s.toLowerCase();t=t.toLowerCase();if(s==="i")return t==="am";if(["you","we","they","the students","my friends","the dogs","those flowers"].includes(s))return t==="are";return t==="is"}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderLobby(){$("lobbyPlayers").innerHTML=players.map((p,i)=>`<div class="player"><b>${esc(p.name)}</b><small>${p.hand?.length||0} kartu · ${p.score||0} poin</small><button class="secondary" style="margin-top:8px;padding:6px 8px" onclick="removePlayer(${i})">Hapus</button></div>`).join("")}
+window.removePlayer=i=>{if(playing)return;players.splice(i,1);renderLobby()}
+$("addPlayer").onclick=()=>{let n=$("name").value.trim();if(!n)return alert("Masukkan nama pemain.");if(players.length>=6)return alert("Maksimal 6 pemain.");players.push({name:n,hand:[],score:0,sentences:0});$("name").value="";renderLobby();$("status").textContent="Pemain ditambahkan. Tambahkan 5–6 pemain, lalu mulai."}
+$("name").addEventListener("keydown",e=>{if(e.key==="Enter")$("addPlayer").click()});
+$("start").onclick=()=>{if(players.length<2)return alert("Tambahkan minimal 2 pemain untuk uji coba; idealnya 5–6 pemain.");deck=makeDeck();used=[];board={};turn=0;starter=null;skips=0;selected=null;logs=[];players.forEach(p=>{p.hand=[];p.score=0;p.sentences=0;for(let i=0;i<5;i++)p.hand.push(deck.pop())});playing=true;log("Permainan dimulai. Setiap pemain mendapat 5 kartu.");$("lobby").classList.add("hidden");$("game").classList.remove("hidden");render()}
+function render(){if(!playing)return;let p=players[turn];$("turnText").textContent="Giliran: "+p.name+" · "+(turn+1)+"/"+players.length;$("handCount").textContent=p.hand.length+" kartu";$("instruction").textContent=needed()?"Pilih kartu "+({subject:"Subject",tobe:"To Be",complement:"Complement"}[needed()])+" yang sesuai.":"Kalimat sedang diperiksa.";["subject","tobe","complement"].forEach(t=>{let el=$("s"+t[0].toUpperCase()+t.slice(1));let c=board[t];el.classList.toggle("filled",!!c);el.innerHTML=`<label>${t==="tobe"?"To Be":t[0].toUpperCase()+t.slice(1)}</label><strong>${c?esc(c.word):"?"}</strong>`});$("sentence").textContent=sentence()||"Belum ada kalimat";$("boardHint").textContent=!needed()?"Kalimat lengkap sedang diperiksa.":!Object.keys(board).length?"Pemain mulai dengan Subject.":"Kartu berikutnya: "+({subject:"Subject",tobe:"To Be",complement:"Complement"}[needed()]);$("hand").innerHTML=p.hand.map(c=>`<button class="card ${c.type} ${selected===c.id?"selected":""}" ${c.type!==needed()?"disabled":""} onclick="selectCard('${c.id}')"><span class="type">${c.type==="tobe"?"To Be":c.type}</span><span class="word">${esc(c.word)}</span><span class="num">${c.id}</span></button>`).join("");$("play").disabled=!selected||!p.hand.some(c=>c.id===selected&&c.type===needed());$("skip").disabled=false;$("scores").innerHTML=players.map((p,i)=>`<tr><td>${i===turn?"▶ ":""}${esc(p.name)}</td><td>${p.sentences}</td><td><b>${p.score}</b></td></tr>`).join("");$("logs").innerHTML=logs.map(x=>`<div>${esc(x)}</div>`).join("");}
+window.selectCard=id=>{selected=id;render()}
+$("play").onclick=()=>{let p=players[turn],type=needed(),idx=p.hand.findIndex(c=>c.id===selected);if(idx<0||!type)return;let card=p.hand[idx];if(card.type!==type)return; p.hand.splice(idx,1);used.push(card);board[type]=card;log(p.name+" memainkan "+card.word+" ("+type+").");selected=null;drawMin(p);
+if(board.subject&&board.tobe&&board.complement){let sent=sentence();if(correctToBe(board.subject.word,board.tobe.word)){p.score+=5;p.sentences++;log(p.name+" menyelesaikan “"+sent+"” dan mendapat 5 poin.");}else{log("Kalimat “"+sent+"” salah penggunaan To Be. Tidak ada poin.");}board={};starter=null;skips=0; // completer continues
+}else{if(type==="subject")starter=turn;turn=(turn+1)%players.length;skips=0}
+checkEnd();render()}
+$("skip").onclick=()=>{let p=players[turn];log(p.name+" melakukan skip.");skips++;turn=(turn+1)%players.length;if(skips>=players.length){if(sentence())log("Kalimat “"+sentence()+"” dibatalkan karena tidak ada pemain yang dapat melengkapinya.");else log("Tidak ada pemain yang dapat memulai kalimat.");board={};starter=null;skips=0;}checkEnd();render()}
+function checkEnd(){if(deck.length===0&&players.every(p=>p.hand.length===0)&&!Object.keys(board).length){playing=false;$("finished").classList.remove("hidden");let max=Math.max(...players.map(p=>p.score)),w=players.filter(p=>p.score===max);$("winner").innerHTML=`<p style="text-align:center;font-size:24px">🏆 ${w.map(p=>esc(p.name)).join(" & ")}</p><p style="text-align:center">${max} poin</p>`;}}
+$("restart").onclick=()=>{if(confirm("Mulai ulang permainan dari awal?")){playing=false;$("game").classList.add("hidden");$("finished").classList.add("hidden");$("lobby").classList.remove("hidden");renderLobby()}}
+$("playAgain").onclick=()=>{$("finished").classList.add("hidden");$("game").classList.add("hidden");$("lobby").classList.remove("hidden");playing=false;renderLobby()}
+renderLobby();
+</script>
+</body>
+</html>
