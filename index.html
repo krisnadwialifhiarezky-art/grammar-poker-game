@@ -1,33 +1,259 @@
-<!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grammar Poker Multiplayer</title>
+from pathlib import Path
+
+html = r'''<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grammar Poker Multiplayer — Module 1</title>
 <style>
-:root{--bg:#10231d;--panel:#19382d;--gold:#f2c66d;--cream:#fff8e9;--muted:#bfd0c7;--red:#c84646}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#244c3c,#0b1915 70%);color:var(--cream);font-family:system-ui,Arial,sans-serif}header{text-align:center;padding:22px 12px 8px}h1{margin:0;color:var(--gold);font-size:clamp(1.5rem,5vw,2.2rem)}header p{margin:6px;color:var(--muted)}main{max-width:950px;margin:auto;padding:12px}.panel{background:#19382de8;border:1px solid #416454;border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 8px 24px #0003}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input,button{font:inherit;border-radius:10px;padding:11px 13px;border:1px solid #557666}input{background:#fff8e9;color:#17271f;min-width:0;flex:1}button{background:var(--gold);color:#18271f;font-weight:750;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.secondary{background:#315847;color:white}.status{color:var(--gold);font-weight:700}.players{display:flex;gap:8px;flex-wrap:wrap}.player{padding:8px 10px;border:1px solid #547665;border-radius:10px;background:#102a20}.player.active{outline:2px solid var(--gold);background:#355d42}.hand{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.card{width:clamp(88px,25vw,125px);min-height:145px;background:var(--cream);color:#16271f;border-radius:12px;border:2px solid #d7cdb8;box-shadow:0 5px 0 #b7a98c;display:flex;flex-direction:column;justify-content:space-between;padding:9px;cursor:pointer;user-select:none;position:relative}.card .suit{font-size:1.15rem;font-weight:900}.card .word{text-align:center;font-weight:800;font-size:1.05rem;overflow-wrap:anywhere;margin:auto 0}.card .bottom{text-align:right;transform:rotate(180deg)}.card.red{color:#b72e36}.card.selected{transform:translateY(-8px);border:3px solid var(--gold);box-shadow:0 8px 0 #a88938}.tiny{font-size:.88rem;color:var(--muted)}.feed{max-height:180px;overflow:auto;background:#0e241b;padding:10px;border-radius:10px}.feed p{margin:5px 0}.hidden{display:none}.pill{border:1px solid #607d6d;border-radius:999px;padding:5px 9px;font-size:.85rem}.good{color:#8ee6a4}.bad{color:#ff9999}
-</style></head><body><header><h1>♠ Grammar Poker ♥</h1><p>Module 1 · Subject Pronouns + To Be · Multiplayer</p></header><main>
-<section class="panel" id="lobby"><h2>Masuk ke meja permainan</h2><p class="tiny">Buat room baru atau masukkan kode room teman. Setiap pemain memegang maksimal 5 kartu.</p><div class="row"><input id="name" maxlength="18" placeholder="Nama pemain"><button id="create">Buat Room</button></div><div class="row" style="margin-top:8px"><input id="roomCode" maxlength="6" placeholder="Kode room"><button id="join" class="secondary">Gabung Room</button></div><p id="lobbyMsg" class="tiny"></p></section>
-<section class="panel hidden" id="game"><div class="row" style="justify-content:space-between"><div><span class="pill">ROOM <b id="roomLabel"></b></span> <span class="pill" id="deckCount">Deck: —</span></div><button class="secondary" id="refresh">Perbarui</button></div><h2 id="turnTitle">Giliran pemain</h2><div class="players" id="players"></div><hr style="border-color:#456656"><h3>Kartu di tangan <span class="tiny" id="handCount"></span></h3><p class="tiny">Ketuk kartu untuk memilihnya. Susun kalimat hanya dari kartu yang dipilih.</p><div id="hand" class="hand"></div><div class="row"><button id="submitSentence">Kirim Kalimat & Akhiri Giliran</button><button id="draw" class="secondary">Ambil Kartu sampai 5</button><button id="clear" class="secondary">Batalkan Pilihan</button></div><p id="gameMsg" class="status"></p><h3>Riwayat meja</h3><div id="feed" class="feed"></div></section></main>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script><script>
-const firebaseConfig={apiKey:"AIzaSyCaWhxVs0FVAgtmqibzY8rDxeQitCmy0Hk",authDomain:"grammar-poker.firebaseapp.com",databaseURL:"https://grammar-poker-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"grammar-poker",storageBucket:"grammar-poker.firebasestorage.app",messagingSenderId:"406151323956",appId:"1:406151323956:web:62c1ce55f38cc2dfe18561",measurementId:"G-H9QWVQ2VNT"};
-firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.database();
-const $=id=>document.getElementById(id);let uid=null,roomId=null,roomRef=null,roomData=null,selected=new Set(),handListener=null;
-const words=[['I','♠'],['You','♥'],['He','♦'],['She','♣'],['It','♠'],['We','♥'],['They','♦'],['am','♣'],['is','♠'],['are','♥'],['a student','♦'],['happy','♣'],['tall','♠'],['my friend','♥'],['at school','♦'],['in the class','♣'],['a teacher','♠'],['kind','♥'],['ready','♦'],['from Indonesia','♣'],['not','♠'],['very','♥'],['a good student','♦'],['at home','♣'],['hungry','♠'],['strong','♥'],['my sister','♦'],['my brother','♣'],['today','♠'],['here','♥']];
-function makeDeck(){let d=[];for(let r=0;r<3;r++)words.forEach((w,i)=>d.push({id:'c'+r+'_'+i,word:w[0],suit:w[1]}));return d.sort(()=>Math.random()-.5)}
-function deal(deck,n=5){return deck.splice(0,Math.min(n,deck.length))}
-function setMsg(t,cls=''){ $('gameMsg').className='status '+cls;$('gameMsg').textContent=t }
-function logLine(text){return {text,at:Date.now()}}
-function drawToFive(p,deck){let count=(p.hand||[]).length;if(count<5&&deck.length){p.hand=(p.hand||[]).concat(deal(deck,5-count));}return p}
-function currentPlayers(data){return Object.values(data.players||{}).sort((a,b)=>(a.seat||0)-(b.seat||0))}
-function isMyTurn(data){return currentPlayers(data)[data.turnIndex||0]?.uid===uid}
-function normalize(s){return s.toLowerCase().replace(/[.!?]/g,'').replace(/\s+/g,' ').trim()}
-function validSentence(cards){let s=normalize(cards.map(c=>c.word).join(' '));const accepted=[/^i am (a student|happy|tall|a teacher|kind|ready|from indonesia|very happy|not happy|hungry|strong|here|at home|at school|in the class)$/, /^you are (a student|happy|tall|my friend|a teacher|kind|ready|from indonesia|not happy|hungry|strong|here|at home|at school|in the class)$/, /^(he|she|it) is (a student|happy|tall|my friend|a teacher|kind|ready|from indonesia|not happy|hungry|strong|here|at home|at school|in the class)$/, /^(we|they) are (students|happy|tall|my friends|teachers|kind|ready|from indonesia|not happy|hungry|strong|here|at home|at school|in the class)$/, /^i am not (happy|hungry|ready)$/, /^(he|she|it) is not (happy|hungry|ready)$/, /^(you|we|they) are not (happy|hungry|ready)$/];return accepted.some(r=>r.test(s))}
-async function ensureAuth(){if(!auth.currentUser)await auth.signInAnonymously();uid=auth.currentUser.uid}
-function showGame(){ $('lobby').classList.add('hidden');$('game').classList.remove('hidden');$('roomLabel').textContent=roomId }
-async function createRoom(){try{await ensureAuth();const name=$('name').value.trim()||'Player';roomId=Math.random().toString(36).slice(2,8).toUpperCase();let deck=makeDeck();const p={uid,name,seat:0,score:0,hand:deal(deck,5)};roomRef=db.ref('rooms/'+roomId);await roomRef.set({createdAt:Date.now(),host:uid,deck,players:{[uid]:p},turnIndex:0,feed:[logLine(name+' membuat room dan memulai permainan.')],discard:[]});enterRoom()}catch(e){$('lobbyMsg').textContent='Gagal membuat room: '+e.message}}
-async function joinRoom(){try{await ensureAuth();const code=$('roomCode').value.trim().toUpperCase();if(!code)throw Error('Masukkan kode room.');roomId=code;roomRef=db.ref('rooms/'+roomId);const snap=await roomRef.once('value');if(!snap.exists())throw Error('Room tidak ditemukan.');const data=snap.val();if(data.players&&data.players[uid]){enterRoom();return}let deck=data.deck||[],players=data.players||{},seat=Object.values(players).length;players[uid]={uid,name:$('name').value.trim()||'Player',seat,score:0,hand:deal(deck,5)};await roomRef.update({players,deck});enterRoom()}catch(e){$('lobbyMsg').textContent='Tidak bisa bergabung: '+e.message}}
-function enterRoom(){showGame();if(handListener)roomRef.off('value',handListener);handListener=s=>{if(!s.exists())return;roomData=s.val();render()};roomRef.on('value',handListener)}
-function render(){if(!roomData)return;const ps=currentPlayers(roomData),turn=ps[roomData.turnIndex||0];$('turnTitle').textContent=turn?(turn.uid===uid?'🎯 Giliran kamu!':'Giliran: '+turn.name):'Menunggu pemain';$('players').innerHTML=ps.map(p=>`<div class="player ${turn&&p.uid===turn.uid?'active':''}"><b>${esc(p.name)}</b><br>⭐ ${p.score||0} poin<br><span class="tiny">${(p.hand||[]).length} kartu</span></div>`).join('');const me=roomData.players[uid];if(!me)return;$('handCount').textContent=`(${(me.hand||[]).length}/5)`;$('deckCount').textContent='Deck: '+(roomData.deck||[]).length;$('hand').innerHTML=(me.hand||[]).map(c=>`<div class="card ${['♥','♦'].includes(c.suit)?'red':''} ${selected.has(c.id)?'selected':''}" data-id="${c.id}"><div class="suit">${c.suit}</div><div class="word">${esc(c.word)}</div><div class="suit bottom">${c.suit}</div></div>`).join('');document.querySelectorAll('.card').forEach(el=>el.onclick=()=>{if(!isMyTurn(roomData))return;const id=el.dataset.id;selected.has(id)?selected.delete(id):selected.add(id);render()});$('submitSentence').disabled=!isMyTurn(roomData)||selected.size===0;$('draw').disabled=!isMyTurn(roomData)||(me.hand||[]).length>=5||(roomData.deck||[]).length===0;$('clear').disabled=selected.size===0;$('feed').innerHTML=(roomData.feed||[]).slice().reverse().map(f=>`<p>${esc(f.text)}</p>`).join('');if(!isMyTurn(roomData))setMsg('Tunggu giliran pemain berikutnya.');else setMsg('Pilih kartu untuk membentuk kalimat.');}
+:root{--bg:#0b1712;--panel:#173629;--gold:#f4cd72;--cream:#fff8e9;--muted:#bfd0c7;--green:#8ee6a4;--red:#ff9999;--line:#426b54}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#285640,#0b1712 72%);color:var(--cream);font-family:system-ui,Arial,sans-serif}
+header{text-align:center;padding:22px 12px 8px}h1{margin:0;color:var(--gold);font-size:clamp(1.6rem,5vw,2.4rem)}header p{color:var(--muted);margin:7px 0}
+main{max-width:1080px;margin:auto;padding:12px}.panel{background:#173629ed;border:1px solid var(--line);border-radius:17px;padding:16px;margin:12px 0;box-shadow:0 10px 28px #0003}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}input,button{font:inherit;border-radius:11px;padding:11px 13px;border:1px solid #5a806b}input{background:var(--cream);color:#17271f;min-width:0;flex:1}button{background:var(--gold);color:#18271f;font-weight:750;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.secondary{background:#315847;color:white}
+.status{font-weight:700;min-height:1.4em;color:var(--gold)}.tiny{font-size:.88rem;color:var(--muted)}.hidden{display:none!important}.pill{border:1px solid #607d6d;border-radius:999px;padding:5px 9px;font-size:.85rem}
+.players{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.player{padding:9px 12px;border:1px solid #547665;border-radius:12px;background:#102a20;min-width:125px}.player.active{outline:2px solid var(--gold);background:#355d42}
+.hand{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.card{width:clamp(88px,24vw,125px);min-height:138px;background:var(--cream);color:#16271f;border-radius:13px;border:2px solid #d7cdb8;box-shadow:0 5px 0 #b7a98c;display:flex;flex-direction:column;justify-content:space-between;padding:9px;cursor:pointer;user-select:none}.card.red{color:#b72e36}.card .suit{font-size:1.1rem;font-weight:900}.card .word{text-align:center;font-weight:800;font-size:1.02rem;overflow-wrap:anywhere;margin:auto 0}.card.selected{transform:translateY(-6px);border:3px solid var(--gold);box-shadow:0 8px 0 #a88938}
+.board{display:flex;gap:10px;flex-wrap:wrap;min-height:100px;align-items:center;padding:12px;background:#102a20;border:1px dashed #63866f;border-radius:14px}.board-card{background:var(--cream);color:#17271f;border-radius:10px;padding:14px 17px;font-weight:850;min-width:95px;text-align:center;box-shadow:0 4px 0 #b7a98c}.board-card small{display:block;color:#54705f;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}.empty{color:var(--muted);font-size:.9rem}.feed{max-height:220px;overflow:auto;background:#0e241b;padding:10px;border-radius:10px}.feed p{margin:5px 0}.good{color:var(--green)}.bad{color:var(--red)}.notice{padding:10px 12px;background:#102a20;border:1px solid var(--line);border-radius:12px}.rulegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}.rule{background:#102a20;border-radius:10px;padding:10px;font-size:.88rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><h1>♠ Grammar Poker ♥</h1><p>Module 1 · Subject + To Be + Complement · Multiplayer</p></header>
+<main>
+<section class="panel" id="lobby">
+<h2>🎮 Masuk ke meja permainan</h2>
+<p class="tiny">60 kartu · 5–6 pemain · 5 kartu awal per pemain</p>
+<div class="row"><input id="name" maxlength="18" placeholder="Nama pemain"><button id="create">Buat Room</button></div>
+<div class="row" style="margin-top:9px"><input id="roomCode" maxlength="6" placeholder="Kode room"><button id="join" class="secondary">Gabung Room</button></div>
+<p id="lobbyMsg" class="status"></p>
+<div class="notice tiny">Game membutuhkan koneksi internet, Firebase Anonymous Authentication, dan aturan Realtime Database yang benar.</div>
+</section>
+<section class="panel hidden" id="game">
+<div class="row" style="justify-content:space-between"><div><span class="pill">ROOM <b id="roomLabel"></b></span> <span class="pill" id="deckCount">Persediaan: —</span> <span class="pill" id="discardCount">Terpakai: —</span></div><button class="secondary" id="copyCode">Salin Kode Room</button></div>
+<h2 id="turnTitle">Menunggu giliran</h2><div class="players" id="players"></div>
+<div class="notice"><b id="neededTitle">Susunan kalimat</b><p class="tiny" id="instruction">Susun Subject → To Be → Complement.</p><div class="board" id="board"></div><p id="sentencePreview" class="status"></p></div>
+<hr style="border-color:#456656">
+<h3>Kartu di tangan <span class="tiny" id="handCount"></span></h3>
+<p class="tiny">Pilih satu kartu lalu tekan Mainkan Kartu. Kartu yang diletakkan dianggap terpakai. Jika tidak punya kategori yang dibutuhkan, tekan Skip.</p>
+<div id="hand" class="hand"></div>
+<div class="row"><button id="playCard">Mainkan Kartu</button><button id="skip" class="secondary">Skip / Tidak Punya Kartu</button><button id="clear" class="secondary">Batalkan Pilihan</button></div>
+<p id="gameMsg" class="status" aria-live="polite"></p>
+<h3>Riwayat meja</h3><div class="feed" id="feed"></div>
+<h3>📜 Aturan singkat</h3><div class="rulegrid">
+<div class="rule"><b>Urutan:</b> Subject → To Be → Complement.</div>
+<div class="rule"><b>Poin:</b> pemain yang menyelesaikan kalimat benar mendapat 5 poin.</div>
+<div class="rule"><b>Lanjut:</b> pemain yang menyelesaikan kalimat boleh memulai kalimat baru.</div>
+<div class="rule"><b>Kartu terpakai:</b> kartu tidak kembali ke tangan/deck.</div>
+<div class="rule"><b>Skip:</b> jika semua pemain skip dalam satu rangkaian, rangkaian dibatalkan tanpa poin.</div>
+<div class="rule"><b>Isi ulang:</b> setelah rangkaian selesai/dibatalkan, pemain yang memiliki kurang dari 3 kartu mengambil hingga 3 jika tersedia.</div>
+</div>
+</section>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+'use strict';
+const firebaseConfig={
+ apiKey:"AIzaSyCaWhxVs0FVAgtmqibzY8rDxeQitCmy0Hk",
+ authDomain:"grammar-poker.firebaseapp.com",
+ databaseURL:"https://grammar-poker-default-rtdb.asia-southeast1.firebasedatabase.app",
+ projectId:"grammar-poker",
+ storageBucket:"grammar-poker.firebasestorage.app",
+ messagingSenderId:"406151323956",
+ appId:"1:406151323956:web:62c1ce55f38cc2dfe18561",
+ measurementId:"G-H9QWVQ2VNT"
+};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
+let uid=null,roomId=null,roomRef=null,roomData=null,roomListener=null,selectedId=null,busy=false;
+const MAX_PLAYERS=6,START_HAND=5,REFILL_TO=3;
+const subjectWords=['I','You','He','She','It','We','They','I','You','He','She','It','We','They','I','You','He','She','We','They'];
+const toBeWords=['am','am','is','is','is','are','are','am','is','are','is','are','am','are','is','are','is','are','am','are'];
+const complementWords=['happy','a student','a teacher','ready','tall','kind','at home','at school','in the class','from Indonesia','hungry','strong','beautiful','my friend','a good student','here','very happy','sad','busy','a doctor'];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeDeck(){
+ const cards=[];
+ subjectWords.forEach((word,i)=>cards.push({id:'S'+i,category:'Subject',word,suit:['♠','♥','♦','♣'][i%4]}));
+ toBeWords.forEach((word,i)=>cards.push({id:'T'+i,category:'To Be',word,suit:['♠','♥','♦','♣'][i%4]}));
+ complementWords.forEach((word,i)=>cards.push({id:'C'+i,category:'Complement',word,suit:['♠','♥','♦','♣'][i%4]}));
+ return shuffle(cards);
+}
+function deal(deck,n){return deck.splice(0,Math.min(n,deck.length))}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function submit(){if(!roomData||!isMyTurn(roomData))return;const data=roomData,me=data.players[uid],cards=(me.hand||[]).filter(c=>selected.has(c.id));if(!cards.length)return;const sentence=cards.map(c=>c.word).join(' ');if(!validSentence(cards)){setMsg('Kalimat belum tepat. Periksa urutan kata dan gunakan kartu yang sesuai. Giliran tetap milikmu.', 'bad');return}let ps=currentPlayers(data),idx=ps.findIndex(p=>p.uid===uid);me.hand=(me.hand||[]).filter(c=>!selected.has(c.id));me.score=(me.score||0)+cards.length*10;data.discard=data.discard||[];data.discard.push(...cards);data.feed=data.feed||[];data.feed.push(logLine(me.name+': “'+sentence+'” ✓ +'+(cards.length*10)+' poin.'));selected.clear();// refill only if hand is below five, then pass turn
- drawToFive(me,data.deck||[]);data.turnIndex=(idx+1)%ps.length;await roomRef.update({players:data.players,deck:data.deck,discard:data.discard,feed:data.feed,turnIndex:data.turnIndex});setMsg('Benar! Kartu kalimat dibuang, tangan diisi maksimal 5 kartu, lalu giliran berpindah.','good')}
-async function draw(){if(!roomData||!isMyTurn(roomData))return;const data=roomData,me=data.players[uid],before=(me.hand||[]).length;if(before>=5){setMsg('Kartu kamu sudah 5. Tidak boleh mengambil kartu lagi.','bad');return}drawToFive(me,data.deck||[]);data.feed=data.feed||[];data.feed.push(logLine(me.name+' mengambil '+((me.hand||[]).length-before)+' kartu hingga memegang maksimal 5 kartu.'));const ps=currentPlayers(data),idx=ps.findIndex(p=>p.uid===uid);data.turnIndex=(idx+1)%ps.length;await roomRef.update({players:data.players,deck:data.deck,feed:data.feed,turnIndex:data.turnIndex});selected.clear()}
-$('create').onclick=createRoom;$('join').onclick=joinRoom;$('submitSentence').onclick=submit;$('draw').onclick=draw;$('clear').onclick=()=>{selected.clear();render()};$('refresh').onclick=()=>roomRef&&roomRef.once('value').then(s=>{roomData=s.val();render()});
-</script></body></html>
+function getPlayers(d){return Object.values(d.players||{}).sort((a,b)=>(a.seat??0)-(b.seat??0))}
+function isMyTurn(d){const ps=getPlayers(d);return ps.length>0&&ps[(d.turnIndex||0)%ps.length]?.uid===uid}
+function addLog(d,message){d.feed=d.feed||[];d.feed.push({text:message,at:Date.now()});if(d.feed.length>80)d.feed=d.feed.slice(-80)}
+function requiredCategory(board){return ['Subject','To Be','Complement'][board.length]||null}
+function validSentence(board){
+ if(board.length!==3||board[0].category!=='Subject'||board[1].category!=='To Be'||board[2].category!=='Complement')return false;
+ const s=board[0].word,t=board[1].word,c=board[2].word.toLowerCase();
+ const expected=({'I':'am','You':'are','He':'is','She':'is','It':'is','We':'are','They':'are'})[s];
+ if(t!==expected)return false;
+ const singularNouns=['a student','a teacher','a good student','a doctor','my friend'];
+ if(['We','They'].includes(s)&&singularNouns.includes(c))return false;
+ return true;
+}
+function setMsg(message,cls=''){ $('gameMsg').className='status '+cls;$('gameMsg').textContent=message}
+async function ensureAuth(){
+ if(!auth.currentUser)await auth.signInAnonymously();
+ uid=auth.currentUser.uid;
+}
+function showGame(){ $('lobby').classList.add('hidden');$('game').classList.remove('hidden');$('roomLabel').textContent=roomId}
+function showLobbyError(prefix,error){$('lobbyMsg').textContent=prefix+(error?.message?' '+error.message:'')}
+function appendLog(d,msg){addLog(d,msg)}
+function refillLowHands(d){
+ d.deck=d.deck||[];
+ for(const p of getPlayers(d)){
+  p.hand=p.hand||[];
+  if(p.hand.length<REFILL_TO&&d.deck.length){
+   const n=Math.min(REFILL_TO-p.hand.length,d.deck.length);
+   p.hand=p.hand.concat(deal(d.deck,n));
+   appendLog(d,p.name+' mengambil '+n+' kartu hingga minimal 3 kartu.');
+  }
+ }
+}
+function advanceTurn(d,idx){const ps=getPlayers(d);if(ps.length)d.turnIndex=(idx+1)%ps.length;else d.turnIndex=0}
+function cancelRound(d,reason){
+ d.board=d.board||[];d.discard=d.discard||[];d.discard.push(...d.board);d.board=[];d.passCount=0;
+ for(const p of getPlayers(d))p.skipped=false;
+ appendLog(d,reason+' Kartu yang telah diletakkan tetap terpakai; tidak ada poin.');
+ refillLowHands(d);
+}
+async function createRoom(){
+ if(busy)return;busy=true;
+ try{
+  await ensureAuth();
+  const name=$('name').value.trim()||'Player';
+  roomId=Math.random().toString(36).slice(2,8).toUpperCase();
+  const deck=makeDeck(),hand=deal(deck,START_HAND),p={uid,name,seat:0,score:0,hand,skipped:false};
+  roomRef=db.ref('rooms/'+roomId);
+  await roomRef.set({createdAt:Date.now(),host:uid,deck,players:{[uid]:p},turnIndex:0,board:[],discard:[],feed:[{text:name+' membuat room.',at:Date.now()}],passCount:0,status:'playing'});
+  enterRoom();
+ }catch(e){showLobbyError('Gagal membuat room:',e)}finally{busy=false}
+}
+async function joinRoom(){
+ if(busy)return;busy=true;
+ try{
+  await ensureAuth();
+  const code=$('roomCode').value.trim().toUpperCase();if(!code)throw Error('Masukkan kode room.');
+  roomId=code;roomRef=db.ref('rooms/'+roomId);
+  const result=await roomRef.transaction(d=>{
+   if(!d||d.status!=='playing')return;
+   d.players=d.players||{};
+   if(d.players[uid])return d;
+   const ps=Object.values(d.players);if(ps.length>=MAX_PLAYERS)return;
+   d.deck=d.deck||[];
+   const seat=ps.reduce((m,p)=>Math.max(m,p.seat??-1),-1)+1;
+   const name=$('name').value.trim()||'Player';
+   d.players[uid]={uid,name,seat,score:0,hand:deal(d.deck,START_HAND),skipped:false};
+   appendLog(d,name+' bergabung ke room.');
+   return d;
+  });
+  if(!result.committed)throw Error('Room tidak ditemukan, penuh, atau permainan tidak aktif.');
+  enterRoom();
+ }catch(e){showLobbyError('Tidak bisa bergabung:',e)}finally{busy=false}
+}
+function enterRoom(){
+ showGame();
+ if(roomRef&&roomListener)roomRef.off('value',roomListener);
+ roomListener=snapshot=>{if(snapshot.exists()){roomData=snapshot.val();render()}};
+ roomRef.on('value',roomListener,error=>setMsg('Koneksi room terputus: '+error.message,'bad'));
+}
+function render(){
+ if(!roomData||!uid)return;
+ const ps=getPlayers(roomData),turn=ps[(roomData.turnIndex||0)%Math.max(ps.length,1)],me=roomData.players?.[uid];
+ if(!me)return;
+ $('turnTitle').textContent=turn?(turn.uid===uid?'🎯 Giliran kamu!':'Giliran: '+turn.name):'Menunggu pemain';
+ $('players').innerHTML=ps.map(p=>`<div class="player ${turn&&turn.uid===p.uid?'active':''}"><b>${esc(p.name)}</b><br>⭐ ${p.score||0} poin<br><span class="tiny">${(p.hand||[]).length}/5 kartu</span></div>`).join('');
+ $('deckCount').textContent='Persediaan: '+(roomData.deck||[]).length;
+ $('discardCount').textContent='Terpakai: '+(roomData.discard||[]).length;
+ const board=roomData.board||[],need=requiredCategory(board);
+ $('neededTitle').textContent=need?'Butuh kartu: '+need:'Rangkaian selesai';
+ $('instruction').textContent=need?'Giliran aktif harus meletakkan satu kartu '+need+'. Jika tidak punya, tekan Skip.':'Pemain yang menyelesaikan kalimat boleh memulai rangkaian berikutnya.';
+ $('board').innerHTML=board.length?board.map(c=>`<div class="board-card"><small>${esc(c.category)}</small>${esc(c.word)}</div>`).join(''):'<span class="empty">Papan kosong. Pemain yang mendapat giliran memulai dengan Subject.</span>';
+ $('sentencePreview').textContent=board.map(c=>c.word).join(' ');
+ $('handCount').textContent=`(${(me.hand||[]).length}/5)`;
+ $('hand').innerHTML=(me.hand||[]).map(c=>`<div class="card ${['♥','♦'].includes(c.suit)?'red':''} ${selectedId===c.id?'selected':''}" data-id="${esc(c.id)}"><div class="suit">${c.suit}</div><div class="word">${esc(c.word)}</div><div class="tiny" style="text-align:center">${esc(c.category)}</div><div class="suit" style="text-align:right;transform:rotate(180deg)">${c.suit}</div></div>`).join('');
+ document.querySelectorAll('#hand .card').forEach(el=>el.onclick=()=>{
+  if(!isMyTurn(roomData))return;
+  selectedId=selectedId===el.dataset.id?null:el.dataset.id;render();
+ });
+ const active=isMyTurn(roomData)&&roomData.status==='playing';
+ $('playCard').disabled=!active||!selectedId||!need||busy;
+ $('skip').disabled=!active||busy;
+ $('clear').disabled=!selectedId||busy;
+ $('feed').innerHTML=(roomData.feed||[]).slice().reverse().map(f=>`<p>${esc(f.text)}</p>`).join('');
+ if(!active)setMsg('Tunggu giliran pemain berikutnya.');
+ else setMsg(need?'Pilih satu kartu kategori '+need+' atau tekan Skip.':'Giliranmu: mulai dengan Subject.');
+}
+async function playCard(){
+ if(busy||!roomData||!isMyTurn(roomData)||!selectedId)return;
+ busy=true;render();const cardId=selectedId;let outcome='invalid';
+ try{
+  const result=await roomRef.transaction(d=>{
+   if(!d||!d.players||!d.players[uid])return;
+   const ps=getPlayers(d),idx=ps.findIndex(p=>p.uid===uid);
+   if(idx<0||idx!==(d.turnIndex||0))return;
+   const me=d.players[uid],hand=me.hand||[],card=hand.find(c=>c.id===cardId);if(!card)return;
+   d.board=d.board||[];const need=requiredCategory(d.board);if(card.category!==need)return;
+   me.hand=hand.filter(c=>c.id!==cardId);d.board.push(card);me.skipped=false;d.passCount=0;
+   appendLog(d,me.name+' memainkan '+card.category+': '+card.word+'.');
+   if(d.board.length===3){
+    if(validSentence(d.board)){
+     const sentence=d.board.map(c=>c.word).join(' ');
+     me.score=(me.score||0)+5;d.discard=d.discard||[];d.discard.push(...d.board);d.board=[];d.passCount=0;
+     for(const p of getPlayers(d))p.skipped=false;
+     appendLog(d,me.name+' menyelesaikan “'+sentence+'” dengan benar: +5 poin.');
+     refillLowHands(d);d.turnIndex=idx;outcome='correct';
+    }else{
+     const sentence=d.board.map(c=>c.word).join(' ');
+     cancelRound(d,'Kalimat “'+sentence+'” tidak benar.');advanceTurn(d,idx);outcome='wrong';
+    }
+   }else{advanceTurn(d,idx);outcome='played'}
+   return d;
+  });
+  selectedId=null;
+  if(!result.committed){setMsg('Kartu tidak dimainkan. Pastikan giliran dan kategori kartu sesuai.','bad');return}
+  if(outcome==='correct')setMsg('Benar! +5 poin. Kamu boleh memulai kalimat baru.','good');
+  else if(outcome==='wrong')setMsg('Kalimat salah. Rangkaian dibatalkan; kartu yang sudah dimainkan tetap terpakai.','bad');
+  else setMsg('Kartu diletakkan. Giliran berpindah ke pemain berikutnya.','good');
+ }catch(e){setMsg('Gagal memainkan kartu: '+e.message,'bad')}
+ finally{busy=false;render()}
+}
+async function skipTurn(){
+ if(busy||!roomData||!isMyTurn(roomData))return;
+ busy=true;render();let aborted=false;
+ try{
+  const result=await roomRef.transaction(d=>{
+   if(!d||!d.players||!d.players[uid])return;
+   const ps=getPlayers(d),idx=ps.findIndex(p=>p.uid===uid);
+   if(idx<0||idx!==(d.turnIndex||0))return;
+   d.board=d.board||[];d.passCount=(d.passCount||0)+1;d.players[uid].skipped=true;
+   appendLog(d,d.players[uid].name+' melewati giliran.');
+   if(d.passCount>=ps.length){cancelRound(d,'Semua pemain telah melewati giliran; rangkaian dibatalkan.');advanceTurn(d,idx);aborted=true}
+   else advanceTurn(d,idx);
+   return d;
+  });
+  selectedId=null;
+  if(!result.committed)setMsg('Skip tidak tersimpan. Coba lagi.','bad');
+  else setMsg(aborted?'Semua pemain skip. Rangkaian dibatalkan tanpa poin.':'Giliran dilewati. Jika semua pemain skip, rangkaian dibatalkan.','good');
+ }catch(e){setMsg('Gagal melewati giliran: '+e.message,'bad')}
+ finally{busy=false;render()}
+}
+$('create').addEventListener('click',createRoom);
+$('join').addEventListener('click',joinRoom);
+$('playCard').addEventListener('click',playCard);
+$('skip').addEventListener('click',skipTurn);
+$('clear').addEventListener('click',()=>{selectedId=null;render()});
+$('copyCode').addEventListener('click',async()=>{
+ try{await navigator.clipboard.writeText(roomId);setMsg('Kode room disalin: '+roomId,'good')}
+ catch(e){setMsg('Kode room: '+roomId+' (salin manual).')}
+});
+</script>
+</body>
+</html>'''
+out=Path("/mnt/data/grammar_poker_multiplayer_rebuilt_v2.html")
+out.write_text(html, encoding="utf-8")
+print(f"File HTML baru berhasil dibuat: {out} ({out.stat().st_size:,} bytes)")
