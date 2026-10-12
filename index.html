@@ -12,6 +12,41 @@ button,input{font:inherit}button{border:0;border-radius:10px;padding:12px 15px;f
 @media(max-width:520px){.wrap{padding:10px}.panel{padding:13px}.slots{gap:4px}.slot{min-height:70px}.hand{grid-template-columns:repeat(2,minmax(0,1fr))}.row{flex-direction:column}}
 </style>
 </head>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+  import {
+    getDatabase
+  } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+  import {
+    getAuth,
+    signInAnonymously
+  } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBW9hujvnshkexn6cEb8IZ13mPuAo6QfsA",
+    authDomain: "grammar-7d65e.firebaseapp.com",
+    databaseURL: "https://grammar-7d65e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "grammar-7d65e",
+    storageBucket: "grammar-7d65e.firebasestorage.app",
+    messagingSenderId: "483154907796",
+    appId: "1:483154907796:web:3d314fb507904fefaa1a81",
+    measurementId: "G-YGW6GNXKLZ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  signInAnonymously(auth)
+    .then(() => {
+      console.log("Firebase Authentication berhasil.");
+    })
+    .catch((error) => {
+      console.error("Authentication gagal:", error);
+    });
+</script>
+
 <body>
 <div class="wrap">
 <header><div class="emoji">🃏</div><h1>GRAMMAR POKER</h1><p>MODULE 1 · Subject + To Be + Complement<br>Susun kalimat, kumpulkan poin, dan menangkan permainan!</p></header>
