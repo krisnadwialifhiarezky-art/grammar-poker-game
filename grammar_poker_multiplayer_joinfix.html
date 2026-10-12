@@ -1,0 +1,452 @@
+from pathlib import Path
+
+html = r'''<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10231d">
+<title>Grammar Poker — Module 1 Multiplayer</title>
+<style>
+:root{--bg:#10231d;--panel:#18372d;--panel2:#21483a;--gold:#f2c66d;--cream:#fff8e9;--muted:#bdcec4;--green:#66d6a1;--red:#e66d67;--blue:#86c8ff;--line:#ffffff22}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#245341 0,transparent 42%),var(--bg);color:var(--cream);font:16px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif;min-height:100vh}
+.wrap{width:min(1050px,100%);margin:auto;padding:14px}header{text-align:center;padding:22px 8px 16px}header .emoji{font-size:42px}h1{margin:0;color:var(--gold);font-size:clamp(26px,5vw,38px)}h2{color:var(--gold);font-size:21px;margin:0 0 14px}h3{margin:0 0 10px}p{margin:8px 0;color:var(--muted)}button,input{font:inherit}button{border:0;border-radius:10px;padding:12px 15px;font-weight:750;cursor:pointer;transition:transform .12s,filter .12s}button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.06)}button:disabled{opacity:.42;cursor:not-allowed}.primary{background:var(--gold);color:#17271e}.secondary{background:#345b4a;color:white}.danger{background:#9d3939;color:white}.success{background:var(--green);color:#10271f}.panel{background:rgba(24,55,45,.97);border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:14px;box-shadow:0 10px 26px #0002}.status{padding:11px 12px;background:#10271f;border:1px solid var(--line);border-radius:10px;color:var(--muted);margin-bottom:13px;overflow-wrap:anywhere}.status.good{color:var(--green)}.status.bad{color:#ffaaa5}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:0}.hidden{display:none!important}label{display:block;color:var(--muted);font-size:14px;margin:9px 0 5px}input{width:100%;background:#10271f;border:1px solid var(--line);border-radius:9px;color:white;padding:12px;outline:none}input:focus{border-color:var(--gold)}.hint{font-size:13px;color:var(--muted)}.code{font-size:32px;letter-spacing:5px;text-align:center;font-weight:900;color:var(--gold);padding:8px}.players{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px}.player{background:#10271f;border:1px solid var(--line);border-radius:11px;padding:12px;overflow-wrap:anywhere}.player.active{border:2px solid var(--gold);box-shadow:0 0 12px #f2c66d22}.player.me{background:#21483a}.small{font-size:12px;color:var(--muted);margin-top:5px}.badge{display:inline-block;padding:4px 7px;border-radius:6px;background:#345b4a;font-size:10px;font-weight:800;margin-top:6px}.badge.turn{background:var(--gold);color:#17271e}.board{background:#10271f;border:2px dashed #f2c66d80;border-radius:14px;padding:14px}.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:13px 0}.slot{min-height:80px;min-width:0;border:1px dashed #ffffff40;border-radius:10px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow-wrap:anywhere}.slot.filled{border:1px solid var(--gold);background:#f2c66d17}.slot label{font-size:10px;letter-spacing:1px;text-transform:uppercase;margin:0}.slot strong{font-size:clamp(13px,2.8vw,19px);margin-top:7px}.sentence{text-align:center;font-size:clamp(18px,4vw,27px);font-weight:850;color:var(--gold);min-height:32px;overflow-wrap:anywhere}.hand{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px}.card{min-width:0;min-height:106px;background:var(--cream);color:#173629;border:3px solid transparent;border-radius:11px;padding:11px 9px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}.card.subject{border-color:#e2b55a}.card.tobe{border-color:#79b7ef}.card.complement{border-color:#71cba0}.card.selected{outline:3px solid white;transform:translateY(-3px)}.card .type{font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:900;color:#60766a}.card .word{font-size:18px;font-weight:900;overflow-wrap:anywhere}.card .num{font-size:10px;color:#60766a;text-align:right}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:130px}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:left}.table th{color:var(--gold)}.log{max-height:220px;overflow:auto}.log div{padding:8px 0;border-bottom:1px solid #ffffff18;color:var(--muted);font-size:13px}.foot{text-align:center;font-size:12px;color:var(--muted);padding:14px}.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#10271f;color:var(--muted);font-size:12px}
+@media(max-width:520px){.wrap{padding:9px}.panel{padding:13px}.slots{gap:4px}.slot{min-height:70px}.hand{grid-template-columns:repeat(2,minmax(0,1fr))}.row.stack{flex-direction:column}.code{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="emoji">🃏</div><h1>GRAMMAR POKER</h1><p>MODULE 1 · Subject + To Be + Complement<br>Multiplayer online untuk 2–6 pemain</p></header>
+<div id="connection" class="status">Menghubungkan ke Firebase...</div>
+
+<section id="lobby" class="panel">
+  <h2>🎮 Masuk ke permainan</h2>
+  <label for="playerName">Nama pemain</label>
+  <input id="playerName" maxlength="24" autocomplete="nickname" placeholder="Masukkan nama kamu">
+  <div class="row stack">
+    <button id="createBtn" class="primary">➕ Buat Room</button>
+    <button id="toggleJoinBtn" class="secondary">🔑 Gabung Room</button>
+  </div>
+  <div id="joinBox" class="hidden">
+    <label for="roomInput">Kode room</label>
+    <input id="roomInput" maxlength="6" autocomplete="off" placeholder="Contoh: A7K9PQ" style="text-transform:uppercase">
+    <button id="joinBtn" class="primary" style="width:100%">Gabung sekarang</button>
+  </div>
+  <p class="hint">Host membuat room dan membagikan kode. Setiap pemain membuka tautan website yang sama dari HP masing-masing. Maksimal 6 pemain.</p>
+</section>
+
+<section id="room" class="hidden">
+  <div class="panel">
+    <div class="row" style="align-items:center"><div><h2>🏠 Room permainan</h2><p id="roomHint">Bagikan kode ini kepada teman.</p></div><button id="leaveBtn" class="danger">Keluar</button></div>
+    <div id="roomCode" class="code">------</div>
+    <button id="copyBtn" class="secondary" style="display:block;margin:auto">📋 Salin kode room</button>
+    <div class="row" style="align-items:center;margin-top:18px"><h3>👥 Pemain</h3><span id="playerCount" class="pill">0/6</span></div>
+    <div id="players" class="players"></div>
+    <div id="hostBox" class="hidden" style="margin-top:15px"><button id="startBtn" class="primary" style="width:100%">🚀 Mulai permainan</button><p class="hint">Saran: mainkan dengan 5–6 pemain. Untuk uji coba, host dapat memulai dengan minimal 2 pemain.</p></div>
+  </div>
+
+  <div id="game" class="hidden">
+    <div class="panel">
+      <div class="row" style="align-items:center"><h2>🎯 Papan kalimat</h2><span id="deckCount" class="pill">60 kartu tersedia</span></div>
+      <div id="turnStatus" class="status">Menunggu giliran...</div>
+      <div class="board">
+        <p class="hint" style="text-align:center">SUSUN KALIMAT</p>
+        <div class="slots">
+          <div id="slotSubject" class="slot"><label>Subject</label><strong>?</strong></div>
+          <div id="slotTobe" class="slot"><label>To Be</label><strong>?</strong></div>
+          <div id="slotComplement" class="slot"><label>Complement</label><strong>?</strong></div>
+        </div>
+        <div id="sentence" class="sentence">Belum ada kalimat</div>
+        <p id="boardHint" class="hint" style="text-align:center"></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row" style="align-items:center"><h2>🃏 Kartu di tanganmu</h2><span id="handCount" class="pill">0 kartu</span></div>
+      <p id="handHint" class="hint">Kartu hanya bisa dimainkan pada giliranmu dan sesuai urutan kalimat.</p>
+      <div id="hand" class="hand"></div>
+      <div class="actions"><button id="playBtn" class="primary" disabled>▶ Mainkan kartu</button><button id="skipBtn" class="secondary" disabled>⏭ Skip giliran</button></div>
+    </div>
+
+    <div class="panel"><h2>🏆 Papan skor</h2><table class="table"><thead><tr><th>Pemain</th><th>Kalimat</th><th>Poin</th></tr></thead><tbody id="scores"></tbody></table></div>
+    <div class="panel"><h2>📜 Riwayat permainan</h2><div id="logs" class="log"></div></div>
+    <div id="finished" class="panel hidden"><h2>🏆 Permainan selesai!</h2><div id="winner"></div><button id="againBtn" class="primary" style="width:100%;margin-top:10px">Main lagi</button></div>
+  </div>
+</section>
+<div class="foot">Grammar Poker · Module 1 · Firebase Realtime Database</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+import { getDatabase, ref, onValue, runTransaction, get, set, update } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBW9hujvnshkexn6cEb8IZ13mPuAo6QfsA",
+  authDomain: "grammar-7d65e.firebaseapp.com",
+  databaseURL: "https://grammar-7d65e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "grammar-7d65e",
+  storageBucket: "grammar-7d65e.firebasestorage.app",
+  messagingSenderId: "483154907796",
+  appId: "1:483154907796:web:3d314fb507904fefaa1a81",
+  measurementId: "G-YGW6GNXKLZ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+const $ = id => document.getElementById(id);
+const MAX_PLAYERS = 6;
+const INITIAL_HAND = 5;
+const MIN_HAND = 3;
+const POINTS = 5;
+
+const SUBJECTS = [
+  "I","You","We","They","He","She","It","My mother","My father","The teacher",
+  "The students","My friends","Ali","Siti","The cat","The dogs","This book","Those flowers",
+  "Our classroom","The weather"
+];
+const TOBES = [
+  "am","am","am","am","am",
+  "is","is","is","is","is","is","is",
+  "are","are","are","are","are","are","are","are"
+];
+const COMPLEMENTS = [
+  "happy","sad","tired","hungry","thirsty","a student","a teacher","my best friend",
+  "very beautiful","very smart","kind and friendly","at school","at home","in the classroom",
+  "ready","clean","interesting","good","beautiful","in the garden"
+];
+
+let uid = null, roomCode = null, roomRef = null, unsubscribeRoom = null;
+let roomData = null, selectedCardId = null, actionBusy = false, authReady = false;
+
+function setConnection(msg, type="") { $("connection").textContent=msg; $("connection").className="status "+type; }
+function esc(v) { return String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function shuffle(arr) { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function makeDeck() {
+  return shuffle([
+    ...SUBJECTS.map((word,i)=>({id:"S"+String(i+1).padStart(2,"0"),type:"subject",word})),
+    ...TOBES.map((word,i)=>({id:"T"+String(i+1).padStart(2,"0"),type:"tobe",word})),
+    ...COMPLEMENTS.map((word,i)=>({id:"C"+String(i+1).padStart(2,"0"),type:"complement",word}))
+  ]);
+}
+function safeName() { return $("playerName").value.trim().slice(0,24); }
+function getPlayers(state=roomData) {
+  return Object.values(state?.players || {}).sort((a,b)=>(a.seat??999)-(b.seat??999));
+}
+function getPlayerIds(state=roomData) { return getPlayers(state).map(p=>p.id); }
+function myPlayer(state=roomData) { return state?.players?.[uid] || null; }
+function isHost(state=roomData) { return !!state && state.hostId===uid; }
+function activePlayerId(state=roomData) { const ids=getPlayerIds(state); return ids.length ? ids[((state.turnIndex||0)%ids.length+ids.length)%ids.length] : null; }
+function myTurn(state=roomData) { return !!state && state.status==="playing" && activePlayerId(state)===uid; }
+function needed(state=roomData) { const b=state?.board||{}; return !b.subject?"subject":!b.tobe?"tobe":!b.complement?"complement":null; }
+function currentSentence(state=roomData) { const b=state?.board||{}; return [b.subject?.word,b.tobe?.word,b.complement?.word].filter(Boolean).join(" "); }
+function nextIndex(state,index) { const ids=getPlayerIds(state); return ids.length?(index+1)%ids.length:0; }
+function addLog(state,message) { state.log=state.log||[]; state.log.unshift({message,time:Date.now()}); state.log=state.log.slice(0,35); }
+function drawToMinimum(state,player) {
+  player.hand=player.hand||[];
+  while(player.hand.length<MIN_HAND && state.deck?.length && player.hand.length<5) player.hand.push(state.deck.pop());
+}
+function correctToBe(subject,tobe) {
+  const s=String(subject).toLowerCase(), t=String(tobe).toLowerCase();
+  if(s==="i") return t==="am";
+  if(["you","we","they","the students","my friends","the dogs","those flowers"].includes(s)) return t==="are";
+  return t==="is";
+}
+function labelType(t) { return ({subject:"Subject",tobe:"To Be",complement:"Complement"})[t]||t; }
+function hasNeededCard(state,player) {
+  const n=needed(state);
+  if(!n || !player) return false;
+  return (player.hand||[]).some(c=>c.type===n && (n!=="tobe" || !state.board.subject || correctToBe(state.board.subject.word,c.word)));
+}
+function removeUsedFromHand(player,cardId) {
+  const idx=(player.hand||[]).findIndex(c=>c.id===cardId);
+  if(idx<0) return null;
+  return player.hand.splice(idx,1)[0];
+}
+function isAllCardsUsed(state) { return (state.usedCards||[]).length>=60; }
+function finishIfNeeded(state) {
+  if(state.status!=="playing") return;
+  if(isAllCardsUsed(state)) {
+    state.status="finished"; state.finishedAt=Date.now();
+    addLog(state,"Semua 60 kartu telah digunakan. Permainan selesai.");
+    return;
+  }
+  // If the deck is empty, every hand is empty, and there is no active sentence.
+  const ps=getPlayers(state);
+  if((state.deck||[]).length===0 && ps.every(p=>(p.hand||[]).length===0) && Object.keys(state.board||{}).length===0) {
+    state.status="finished"; state.finishedAt=Date.now();
+    addLog(state,"Tidak ada kartu yang tersisa untuk dimainkan. Permainan selesai.");
+  }
+}
+function startState(state) {
+  const deck=makeDeck();
+  const ps=getPlayers(state);
+  if(ps.length<2 || ps.length>MAX_PLAYERS) throw new Error("Permainan memerlukan 2–6 pemain.");
+  ps.forEach(p=>{
+    p.hand=[];
+    for(let i=0;i<INITIAL_HAND;i++) p.hand.push(deck.pop());
+    p.score=0; p.sentences=0;
+  });
+  state.deck=deck; state.usedCards=[]; state.board={}; state.turnIndex=0;
+  state.consecutiveSkips=0; state.status="playing"; state.startedAt=Date.now(); state.finishedAt=null;
+  addLog(state,"Permainan dimulai. Setiap pemain mendapat 5 kartu.");
+}
+function enterRoom(code) {
+  if(unsubscribeRoom) unsubscribeRoom();
+  roomCode=code;
+  roomRef=ref(db,"rooms/"+code);
+  $("lobby").classList.add("hidden");
+  $("room").classList.remove("hidden");
+  $("roomCode").textContent=code;
+  unsubscribeRoom=onValue(roomRef,snap=>{
+    if(!snap.exists()) { setConnection("Room tidak ditemukan atau telah dihapus.","bad"); return; }
+    roomData=snap.val();
+    renderRoom();
+    setConnection("Terhubung ke room "+code+". Sinkronisasi aktif.","good");
+  },err=>setConnection("Gagal membaca database: "+err.message,"bad"));
+}
+function renderRoom() {
+  if(!roomData) return;
+  const ps=getPlayers();
+  $("playerCount").textContent=ps.length+"/"+MAX_PLAYERS+" pemain";
+  $("roomHint").textContent=roomData.status==="lobby"?"Bagikan kode ini kepada teman. Host memulai permainan.":roomData.status==="playing"?"Permainan sedang berlangsung.":"Permainan selesai.";
+  $("players").innerHTML=ps.map(p=>{
+    const isActive=roomData.status==="playing"&&p.id===activePlayerId();
+    return `<div class="player ${p.id===uid?"me":""} ${isActive?"active":""}">
+      <b>${esc(p.name)}${p.id===uid?" (Kamu)":""}</b>
+      <div class="small">Kartu: ${(p.hand||[]).length}<br>Skor: ${p.score||0}</div>
+      ${p.id===roomData.hostId?'<span class="badge">HOST</span>':""}
+      ${isActive?'<span class="badge turn">GILIRAN</span>':""}
+    </div>`;
+  }).join("");
+  $("hostBox").classList.toggle("hidden",!isHost()||roomData.status!=="lobby");
+  $("startBtn").disabled=ps.length<2;
+  $("game").classList.toggle("hidden",roomData.status==="lobby");
+  if(roomData.status!=="lobby") renderGame();
+}
+function renderGame() {
+  if(!roomData) return;
+  const b=roomData.board||{};
+  for(const [id,key,label] of [["slotSubject","subject","Subject"],["slotTobe","tobe","To Be"],["slotComplement","complement","Complement"]]) {
+    const el=$(id), c=b[key]; el.classList.toggle("filled",!!c);
+    el.innerHTML=`<label>${label}</label><strong>${c?esc(c.word):"?"}</strong>`;
+  }
+  $("sentence").textContent=currentSentence()||"Belum ada kalimat";
+  const n=needed();
+  $("boardHint").textContent=!n?"Kalimat lengkap sedang diperiksa.":!Object.keys(b).length?"Mulai dengan kartu Subject.":"Kartu berikutnya yang dibutuhkan: "+labelType(n);
+  $("deckCount").textContent=(roomData.deck||[]).length+" kartu di tumpukan";
+  const active=roomData.players?.[activePlayerId()];
+  $("turnStatus").textContent=myTurn()
+    ? "🎯 Giliranmu! "+(n?"Pilih kartu "+labelType(n)+".":"Kalimat sedang diperiksa.")
+    : "Menunggu giliran "+(active?.name||"pemain")+"...";
+  $("turnStatus").className="status "+(myTurn()?"good":"");
+  const me=myPlayer(), hand=me?.hand||[];
+  $("handCount").textContent=hand.length+" kartu";
+  $("handHint").textContent=myTurn()
+    ? (hasNeededCard(roomData,me)?"Pilih kartu yang dibutuhkan untuk melanjutkan kalimat.":"Kamu tidak memiliki kartu yang dibutuhkan. Tekan Skip Giliran.")
+    : "Kartu di tanganmu hanya terlihat pada perangkatmu di antarmuka game.";
+  $("hand").innerHTML=hand.map(c=>{
+    const valid=myTurn() && c.type===n && (c.type!=="tobe"||!b.subject||correctToBe(b.subject.word,c.word));
+    return `<button class="card ${c.type} ${selectedCardId===c.id?"selected":""}" data-card="${esc(c.id)}" ${valid?"":"disabled"}>
+      <span class="type">${labelType(c.type)}</span><span class="word">${esc(c.word)}</span><span class="num">${esc(c.id)}</span>
+    </button>`;
+  }).join("");
+  document.querySelectorAll("[data-card]").forEach(btn=>btn.addEventListener("click",()=>{selectedCardId=btn.dataset.card;renderGame();}));
+  const selected=hand.find(c=>c.id===selectedCardId);
+  const selectedValid=selected && selected.type===n && (selected.type!=="tobe"||!b.subject||correctToBe(b.subject.word,selected.word));
+  $("playBtn").disabled=!myTurn()||!selectedValid||actionBusy;
+  $("skipBtn").disabled=!myTurn()||hasNeededCard(roomData,me)||actionBusy;
+  $("scores").innerHTML=[...psForScore()].sort((a,b)=>(b.score||0)-(a.score||0)).map(p=>`<tr><td>${esc(p.name)}${p.id===uid?" (Kamu)":""}</td><td>${p.sentences||0}</td><td><b>${p.score||0}</b></td></tr>`).join("");
+  $("logs").innerHTML=(roomData.log||[]).slice(0,30).map(item=>`<div>${new Date(item.time||Date.now()).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})} — ${esc(item.message)}</div>`).join("");
+  $("finished").classList.toggle("hidden",roomData.status!=="finished");
+  if(roomData.status==="finished") renderWinner();
+}
+function psForScore(){return getPlayers();}
+function renderWinner() {
+  const ps=getPlayers(), max=Math.max(0,...ps.map(p=>p.score||0)), winners=ps.filter(p=>(p.score||0)===max);
+  $("winner").innerHTML=`<p style="text-align:center;font-size:23px;color:var(--gold)">🏆 ${winners.map(p=>esc(p.name)).join(" & ")}</p><p style="text-align:center">${max} poin</p>`;
+}
+async function actTransaction(mutator) {
+  if(!roomRef || actionBusy) return;
+  actionBusy=true; renderGame();
+  try {
+    const result=await runTransaction(roomRef,state=>{
+      if(!state) return;
+      const ids=getPlayerIds(state);
+      if(state.status!=="playing" || !ids.length || ids[((state.turnIndex||0)%ids.length+ids.length)%ids.length]!==uid) return;
+      mutator(state,ids);
+      return state;
+    },{applyLocally:false});
+    if(!result.committed) throw new Error("Aksi tidak diterima. Periksa giliran atau koneksi internet.");
+  } catch(e) {
+    console.error(e); alert("Aksi gagal: "+e.message);
+  } finally { actionBusy=false; selectedCardId=null; if(roomData) renderGame(); }
+}
+
+$("createBtn").addEventListener("click",async()=>{
+  if(!authReady||!uid) return alert("Tunggu sampai Firebase Authentication terhubung.");
+  const name=safeName(); if(!name) return alert("Masukkan nama pemain.");
+  $("createBtn").disabled=true;
+  try {
+    let code="",created=false;
+    for(let i=0;i<6;i++){
+      code=Array.from({length:6},()=> "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random()*32)]).join("");
+      const newRoom={code,hostId:uid,status:"lobby",createdAt:Date.now(),players:{[uid]:{id:uid,name,seat:0,hand:[],score:0,sentences:0,joinedAt:Date.now()}},deck:[],board:{},usedCards:[],turnIndex:0,consecutiveSkips:0,log:[{message:name+" membuat room.",time:Date.now()}]};
+      const roomLocation=ref(db,"rooms/"+code);
+      const res=await runTransaction(roomLocation,current=>current===null?newRoom:undefined,{applyLocally:false});
+      if(res.committed){created=true;break;}
+    }
+    if(!created) throw new Error("Tidak bisa membuat kode room. Coba lagi.");
+    enterRoom(code);
+  } catch(e) {console.error(e);alert("Gagal membuat room: "+e.message);}
+  finally {$("createBtn").disabled=false;}
+});
+$("toggleJoinBtn").onclick=()=>$("joinBox").classList.toggle("hidden");
+$("joinBtn").addEventListener("click",async()=>{
+  if(!authReady||!uid) return alert("Tunggu sampai Firebase Authentication terhubung.");
+  const name=safeName(), code=$("roomInput").value.trim().toUpperCase();
+  if(!name) return alert("Masukkan nama pemain.");
+  if(!/^[A-Z0-9]{6}$/.test(code)) return alert("Kode room harus 6 karakter.");
+  $("joinBtn").disabled=true;
+  try {
+    const location=ref(db,"rooms/"+code);
+    let joinFailureReason = "Transaksi tidak berhasil. Periksa kode room dan koneksi Firebase.";
+    const result=await runTransaction(location,state=>{
+      if(!state) {
+        joinFailureReason = "Kode room tidak ditemukan di database. Minta host membuat room BARU dan bagikan kode yang tampil.";
+        return;
+      }
+      state.players=state.players||{};
+      if(state.players[uid]) {
+        // Perangkat ini sudah terdaftar di room; lanjutkan masuk tanpa membuat duplikat.
+        return state;
+      }
+      if(state.status!=="lobby") {
+        joinFailureReason = "Room sudah dimulai atau sudah selesai. Host harus membuat room baru.";
+        return;
+      }
+      const ids=Object.keys(state.players);
+      if(ids.length>=MAX_PLAYERS) {
+        joinFailureReason = "Room sudah penuh (maksimal 6 pemain).";
+        return;
+      }
+      state.players[uid]={id:uid,name,seat:Math.max(-1,...Object.values(state.players).map(p=>p.seat??-1))+1,hand:[],score:0,sentences:0,joinedAt:Date.now()};
+      addLog(state,name+" bergabung ke room.");
+      return state;
+    },{applyLocally:false});
+    if(!result.committed) throw new Error(joinFailureReason);
+    enterRoom(code);
+  } catch(e) {
+    console.error("Gagal bergabung ke room:",e);
+    const detail = e?.message || String(e);
+    alert("Gagal bergabung: "+detail);
+  }
+  finally {$("joinBtn").disabled=false;}
+});
+$("startBtn").addEventListener("click",async()=>{
+  if(!roomRef||!isHost()) return;
+  try {
+    const result=await runTransaction(roomRef,state=>{
+      if(!state||state.hostId!==uid||state.status!=="lobby") return;
+      if(getPlayers(state).length<2) return;
+      startState(state); return state;
+    },{applyLocally:false});
+    if(!result.committed) alert("Tambahkan minimal 2 pemain sebelum memulai.");
+  } catch(e){console.error(e);alert("Gagal memulai: "+e.message);}
+});
+$("playBtn").addEventListener("click",async()=>{
+  const chosen=selectedCardId; if(!chosen||!myTurn()) return;
+  await actTransaction((state,ids)=>{
+    const p=state.players[uid], n=needed(state), b=state.board||{};
+    if(!p||!n) throw new Error("Tidak ada kartu yang dibutuhkan.");
+    const index=(p.hand||[]).findIndex(c=>c.id===chosen);
+    if(index<0) throw new Error("Kartu tidak ditemukan di tanganmu.");
+    const card=p.hand[index];
+    if(card.type!==n) throw new Error("Jenis kartu tidak sesuai.");
+    if(n==="tobe"&&b.subject&&!correctToBe(b.subject.word,card.word)) throw new Error("To Be tidak sesuai dengan Subject.");
+    p.hand.splice(index,1);
+    state.usedCards=state.usedCards||[]; state.usedCards.push(card);
+    state.board=state.board||{}; state.board[n]=card; state.consecutiveSkips=0;
+    addLog(state,p.name+" memainkan kartu "+card.word+".");
+    drawToMinimum(state,p);
+    if(state.board.subject&&state.board.tobe&&state.board.complement){
+      const sentence=currentSentence(state);
+      // To Be has already been validated against Subject; sentence is correct for this module.
+      p.score=(p.score||0)+POINTS; p.sentences=(p.sentences||0)+1;
+      addLog(state,p.name+" menyelesaikan \""+sentence+"\" dan mendapat "+POINTS+" poin.");
+      state.board={}; state.consecutiveSkips=0;
+      // Completing player continues their turn. If they do not have a Subject,
+      // the skip button allows them to pass to the next player.
+      state.turnIndex=ids.indexOf(uid);
+    } else {
+      state.turnIndex=(ids.indexOf(uid)+1)%ids.length;
+    }
+    finishIfNeeded(state);
+  });
+});
+$("skipBtn").addEventListener("click",async()=>{
+  if(!myTurn()||hasNeededCard(roomData,myPlayer())) return;
+  await actTransaction((state,ids)=>{
+    const currentIndex=ids.indexOf(uid);
+    addLog(state,(state.players[uid]?.name||"Pemain")+" melakukan skip.");
+    state.consecutiveSkips=(state.consecutiveSkips||0)+1;
+    if(state.consecutiveSkips>=ids.length){
+      const unfinished=currentSentence(state);
+      if(unfinished){
+        addLog(state,"Kalimat \""+unfinished+"\" dibatalkan karena tidak ada pemain yang dapat melengkapinya.");
+        // Cards already placed remain used, never return to the deck.
+      } else {
+        addLog(state,"Satu putaran berlalu tanpa ada kartu yang dapat dimainkan.");
+      }
+      state.board={}; state.consecutiveSkips=0;
+      state.turnIndex=(currentIndex+1)%ids.length;
+    } else {
+      state.turnIndex=(currentIndex+1)%ids.length;
+    }
+    finishIfNeeded(state);
+  });
+});
+$("copyBtn").addEventListener("click",async()=>{
+  try {await navigator.clipboard.writeText(roomCode);$("copyBtn").textContent="✅ Kode tersalin";setTimeout(()=>$("copyBtn").textContent="📋 Salin kode room",1500);}
+  catch {prompt("Salin kode room:",roomCode);}
+});
+$("leaveBtn").addEventListener("click",()=>{
+  if(!confirm("Keluar dari room ini?")) return;
+  if(unsubscribeRoom) unsubscribeRoom();
+  unsubscribeRoom=null;roomRef=null;roomCode=null;roomData=null;selectedCardId=null;
+  $("room").classList.add("hidden");$("game").classList.add("hidden");$("lobby").classList.remove("hidden");
+  setConnection("Kamu keluar dari room. Kamu dapat membuat atau bergabung ke room lain.");
+});
+$("againBtn").addEventListener("click",async()=>{
+  if(!isHost()) return alert("Hanya host yang dapat memulai ulang.");
+  try {
+    const result=await runTransaction(roomRef,state=>{
+      if(!state||state.hostId!==uid||state.status!=="finished") return;
+      startState(state); return state;
+    },{applyLocally:false});
+    if(!result.committed) alert("Tidak dapat memulai ulang.");
+  } catch(e){alert("Gagal memulai ulang: "+e.message);}
+});
+$("roomInput").addEventListener("input",()=>{$("roomInput").value=$("roomInput").value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6);});
+$("playerName").addEventListener("keydown",e=>{if(e.key==="Enter") $("createBtn").click();});
+
+try {
+  await signInAnonymously(auth);
+} catch(e) {
+  console.error(e);
+  setConnection("Firebase Authentication gagal: "+e.message+". Pastikan Anonymous sign-in diaktifkan.","bad");
+}
+onAuthStateChanged(auth,user=>{
+  if(user){uid=user.uid;authReady=true;setConnection("Firebase terhubung. Siap membuat atau bergabung ke room.","good");}
+});
+window.addEventListener("offline",()=>setConnection("Internet terputus. Permainan online memerlukan koneksi internet.","bad"));
+window.addEventListener("online",()=>setConnection("Internet tersambung kembali.","good"));
+</script>
+</body>
+</html>
+'''
+path = Path("/mnt/data/grammar_poker_multiplayer_module1.html")
+path.write_text(html, encoding="utf-8")
+print(f"Berhasil membuat {path} ({path.stat().st_size:,} bytes)")
