@@ -312,20 +312,37 @@ $("joinBtn").addEventListener("click",async()=>{
   $("joinBtn").disabled=true;
   try {
     const location=ref(db,"rooms/"+code);
+    let joinFailureReason = "Transaksi tidak berhasil. Periksa kode room dan koneksi Firebase.";
     const result=await runTransaction(location,state=>{
-      if(!state) return;
+      if(!state) {
+        joinFailureReason = "Kode room tidak ditemukan di database. Minta host membuat room BARU dan bagikan kode yang tampil.";
+        return;
+      }
       state.players=state.players||{};
-      if(state.players[uid]) return state;
-      if(state.status!=="lobby") return;
+      if(state.players[uid]) {
+        // Perangkat ini sudah terdaftar di room; lanjutkan masuk tanpa membuat duplikat.
+        return state;
+      }
+      if(state.status!=="lobby") {
+        joinFailureReason = "Room sudah dimulai atau sudah selesai. Host harus membuat room baru.";
+        return;
+      }
       const ids=Object.keys(state.players);
-      if(ids.length>=MAX_PLAYERS) return;
+      if(ids.length>=MAX_PLAYERS) {
+        joinFailureReason = "Room sudah penuh (maksimal 6 pemain).";
+        return;
+      }
       state.players[uid]={id:uid,name,seat:Math.max(-1,...Object.values(state.players).map(p=>p.seat??-1))+1,hand:[],score:0,sentences:0,joinedAt:Date.now()};
       addLog(state,name+" bergabung ke room.");
       return state;
     },{applyLocally:false});
-    if(!result.committed) throw new Error("Room tidak ditemukan, permainan sudah dimulai, atau room penuh.");
+    if(!result.committed) throw new Error(joinFailureReason);
     enterRoom(code);
-  } catch(e) {console.error(e);alert("Gagal bergabung: "+e.message);}
+  } catch(e) {
+    console.error("Gagal bergabung ke room:",e);
+    const detail = e?.message || String(e);
+    alert("Gagal bergabung: "+detail);
+  }
   finally {$("joinBtn").disabled=false;}
 });
 $("startBtn").addEventListener("click",async()=>{
